@@ -1,33 +1,131 @@
 <html>
-    <body id="chat-container">
-        <div>
-            <input id="message-field" type="text"> <button onclick="do_post()">&gt;</button>
-        </div>
-        <hr>
-        <script type="text/javascript">
-            var ws_url = "ws://" + window.location.hostname + ":" + window.location.port + window.location.pathname + "ws/";
-            var container = document.getElementById("chat-container");
-            var socket = new WebSocket(ws_url);
-            socket.onmessage = function (event) {
-                var element = document.createElement('div');
-                var text = document.createTextNode(event.data);
-                element.appendChild(text);
-                container.appendChild(element);
-            }
-            socket.onclose = function (event) {
-                var element = document.createElement('div');
-                var text = document.createTextNode('Websocket closed. Please reload.');
-                element.appendChild(text);
-                element.setAttribute('style', 'color:red;');
-                container.appendChild(element);
-            }
+    <script type="text/javascript">
+    var canvas, ctx, flag = false,
+        prevX = 0,
+        currX = 0,
+        prevY = 0,
+        currY = 0,
+        dot_flag = false;
 
-            function do_post() {
-                var myRequest = new XMLHttpRequest();
-                var message_field_elem = document.getElementById("message-field");
-                myRequest.open('POST', window.location)
-                myRequest.send(message_field_elem.value);
+    var x = "black",
+        y = 2;
+    
+    function init() {
+        canvas = document.getElementById('can');
+        ctx = canvas.getContext("2d");
+        w = canvas.width;
+        h = canvas.height;
+    
+        canvas.addEventListener("mousemove", function (e) {
+            findxy('move', e)
+        }, false);
+        canvas.addEventListener("mousedown", function (e) {
+            findxy('down', e)
+        }, false);
+        canvas.addEventListener("mouseup", function (e) {
+            findxy('up', e)
+        }, false);
+        canvas.addEventListener("mouseout", function (e) {
+            findxy('out', e)
+        }, false);
+    }
+    
+    function draw() {
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(currX, currY);
+        ctx.strokeStyle = x;
+        ctx.lineWidth = y;
+        ctx.stroke();
+        ctx.closePath();
+        do_post("line");
+    }
+    
+    function findxy(res, e) {
+        if (res == 'down') {
+            prevX = currX;
+            prevY = currY;
+            currX = e.clientX - canvas.offsetLeft;
+            currY = e.clientY - canvas.offsetTop;
+    
+            flag = true;
+            dot_flag = true;
+            if (dot_flag) {
+                ctx.beginPath();
+                ctx.fillStyle = x;
+                ctx.fillRect(currX, currY, 2, 2);
+                ctx.closePath();
+                dot_flag = false;
+                do_post("point");
             }
-        </script>
+        }
+
+        if (res == 'up' || res == "out") {
+            flag = false;
+        }
+        
+        if (res == 'move') {
+            if (flag) {
+                prevX = currX;
+                prevY = currY;
+                currX = e.clientX - canvas.offsetLeft;
+                currY = e.clientY - canvas.offsetTop;
+                draw();
+            }
+        }
+    }
+
+    function drawMessage(message) {
+        if (message.method == "point") {
+            ctx.beginPath();
+            ctx.fillStyle = message.x;
+            ctx.fillRect(message.currX, message.currY, 2, 2);
+            ctx.closePath();
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(message.prevX, message.prevY);
+            ctx.lineTo(message.currX, message.currY);
+            ctx.strokeStyle = message.x;
+            ctx.lineWidth = message.y;
+            ctx.stroke();
+            ctx.closePath();
+        }
+    }
+
+    var ws_url = "ws://" + window.location.hostname + ":" + window.location.port + window.location.pathname + "ws/";
+
+    var container = document.getElementById("chat-container");
+    var socket = new WebSocket(ws_url);
+    socket.onmessage = function (event) {
+        var cons_message = JSON.parse(event.data);
+        drawMessage(cons_message);
+    }
+    socket.onclose = function (event) {
+        var element = document.createElement('div');
+        var text = document.createTextNode('Websocket closed. Please reload.');
+        element.appendChild(text);
+        element.setAttribute('style', 'color:red;');
+        container.appendChild(element);
+    }
+
+    function do_post(method) {
+        var myRequest = new XMLHttpRequest();
+        var new_message = {};
+        new_message["method"] = method;
+        new_message["prevX"] = prevX;
+        new_message["prevY"] = prevY;
+        new_message["currX"] = currX;
+        new_message["currY"] = currY;
+        new_message["x"] = x;
+        new_message["y"] = y;
+        var message_field_elem = JSON.stringify(new_message);
+        myRequest.open('POST', window.location)
+        myRequest.send(message_field_elem);
+    }
+    </script>
+    <body id="chat-container">
+        <body onload="init()">
+            <canvas id="can" width=700 height=700 style="border:2px solid;"></canvas>
+        </body>
     </body>
 </html>

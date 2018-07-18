@@ -35,8 +35,8 @@ async def new_msg(request):
 
 
 async def send_message(name, message):
-    print('{}: {}'.format(name, message).strip())
-    history.append('{}: {}'.format(name, message))
+    print('{}'.format(message).strip())
+    history.append('{}'.format(message))
     if len(history) > 20:
         del history[:-10]
     for queue in queues:
@@ -80,7 +80,7 @@ async def echo_loop(ws):
     try:
         while True:
             name, message = await queue.get()
-            await ws.send_str('{}: {}'.format(name, message))
+            await ws.send_str('{}'.format(message))
     finally:
         queues.remove(queue)
 
