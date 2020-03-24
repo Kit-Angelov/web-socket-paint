@@ -122,10 +122,44 @@
         myRequest.open('POST', window.location)
         myRequest.send(message_field_elem);
     }
+
+    function setColor(value) {
+        x = value;
+    }
     </script>
     <body id="chat-container">
         <body onload="init()">
-            <canvas id="can" width=700 height=700 style="border:2px solid;"></canvas>
+            <canvas id="can" width=1200 height=900 style="border:2px solid;"></canvas>
+            <div id="colors">
+                <div class="color black" onclick="setColor('black')"></div>
+                <div class="color red" onclick="setColor('red')"></div>
+                <div class="color green" onclick="setColor('green')"></div>
+                <div class="color blue" onclick="setColor('blue')"></div>
+            </div>
         </body>
     </body>
+    <style>
+        #can {
+            float: left;
+        }
+        #colors {
+            float: left
+        }
+        .color {
+            width: 50px;
+            height: 50px;
+        }
+        .black {
+            background-color: black;
+        }
+        .red {
+            background-color: red;
+        }
+        .green {
+            background-color: green;
+        }
+        .blue {
+            background-color: blue;
+        }
+    </style>
 </html>
